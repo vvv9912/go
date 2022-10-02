@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 	"sync"
@@ -44,13 +45,14 @@ func Test1(list []string) string {
 //	err := Test2("test2.txt", "hello test2")
 func Test2(filename, data string) error {
 	dir, err := os.MkdirTemp("", "tmp")
-	f, err := os.Create(dir + "/" + filename)
+
+	f, err := os.Create(path.Join(dir, filename))
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-
-	_, err = f.Write([]byte(data)) // !упростить - использовать os.WriteFile
+	// !упростить - использовать os.WriteFile
+	_, err = f.Write([]byte(data))
 	if err != nil {
 		return err
 	}
@@ -245,8 +247,8 @@ func main() {
 	fmt.Println(r1)*/
 	//start test2
 	/*err := Test2("test2.txt", "hello test2")
-	  fmt.Println(err)
-	*/
+	fmt.Println(err)*/
+
 	//start test3
 	/*	ip, err := Test3("http://user:pass@127.0.0.1:3128/")
 		fmt.Println(ip)
