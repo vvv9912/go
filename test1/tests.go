@@ -15,6 +15,18 @@ import (
 	"time"
 )
 
+// Test1 принимает на вход список строк и выводит их в одной строке через пробел, возможно, в случайном порядке.
+// Смысл этого кода не в конкатенации слов через пробел, а в понимании работы многопоточности.
+//
+// Вам необходимо исправить код так, чтобы он работал, не удаляя ничего из него, а только внося исправления.
+//
+// Доп. задание: напишите тест на эту функцию.
+//
+// Пример вызова функции:
+//
+//	data1 := []string{"hello", "world", "test", "data", "code"}
+//	r1 := Test1(data1)
+//	fmt.Println(r1)
 func Test1(list []string) string {
 	var result string
 	var mu sync.Mutex
@@ -130,10 +142,15 @@ type con struct {
 	net.Conn
 	nRead  uint64
 	nWrite uint64
+	rmuw   sync.RWMutex
+	rmur   sync.RWMutex
+	//muw    sync.Mutex
+	//	mur    sync.Mutex
 }
 
 func Test4(conn net.Conn) Test4Conn {
-	cout := &con{conn, 0, 0}
+	cout := &con{}
+	cout.Conn = conn
 	return cout
 }
 
@@ -152,57 +169,53 @@ func (c *con) WriteByteCount() uint64 {
 }
 
 func (c *con) Write(b []byte) (int, error) {
-	var mu sync.Mutex
-	var wg sync.WaitGroup
+
 	var n int
 	var err error
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		n, err = c.Conn.Write(b)
-		if err != nil {
-			return
-		}
-		mu.Lock()
-		c.nWrite = uint64(n)
-		mu.Unlock()
-	}()
-	wg.Wait()
+
+	n, err = c.Conn.Write(b)
+	if err != nil {
+		return n, err
+	}
+	c.rmuw.Lock()
+	c.nWrite = uint64(n)
+	c.rmuw.Unlock()
+
 	return n, err
 }
 
 func (c *con) Read(b []byte) (int, error) {
-	var mu sync.Mutex
-	var wg sync.WaitGroup
+
 	var n int
 	var err error
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		n, err = c.Conn.Read(b)
-		if err != nil {
-			return
-		}
-		mu.Lock()
-		c.nRead = uint64(n)
-		mu.Unlock()
-	}()
-	wg.Wait()
+
+	n, err = c.Conn.Read(b)
+	if err != nil {
+		return n, err
+	}
+	c.rmur.Lock()
+	c.nRead = uint64(n)
+	c.rmur.Unlock()
+
 	return n, err
 }
 
 func test_test1(test *testing.T) {
 	data1 := []string{"hello", "world", "test", "data", "code"}
+	var data11 []string
 	r1 := Test1(data1)
 	var cout int
 	for i := 0; i < len(data1); i++ {
 		if createWordRegex(data1[i]).MatchString(r1) {
 			cout += 1
 			r1 = strings.ReplaceAll(r1, data1[i], "")
+		} else {
+			data11 = append(data11, data1[i])
 		}
+
 	}
 	if len(data1) != cout {
-		test.Errorf("error, word: %s", r1)
+		test.Errorf("error, word: %s", data11)
 	}
 
 }
@@ -245,6 +258,7 @@ func main() {
 	/*data1 := []string{"hello", "world", "test", "data", "code"}
 	r1 := Test1(data1)
 	fmt.Println(r1)*/
+
 	//start test2
 	/*err := Test2("test2.txt", "hello test2")
 	fmt.Println(err)*/
