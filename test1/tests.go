@@ -144,8 +144,6 @@ type con struct {
 	nWrite uint64
 	rmuw   sync.RWMutex
 	rmur   sync.RWMutex
-	//muw    sync.Mutex
-	//	mur    sync.Mutex
 }
 
 func Test4(conn net.Conn) Test4Conn {
@@ -169,11 +167,7 @@ func (c *con) WriteByteCount() uint64 {
 }
 
 func (c *con) Write(b []byte) (int, error) {
-
-	var n int
-	var err error
-
-	n, err = c.Conn.Write(b)
+	n, err := c.Conn.Write(b)
 	if err != nil {
 		return n, err
 	}
@@ -185,11 +179,7 @@ func (c *con) Write(b []byte) (int, error) {
 }
 
 func (c *con) Read(b []byte) (int, error) {
-
-	var n int
-	var err error
-
-	n, err = c.Conn.Read(b)
+	n, err := c.Conn.Read(b)
 	if err != nil {
 		return n, err
 	}
